@@ -14,11 +14,10 @@ npm install react-native-performance-kit
 
 
 ```js
-import { multiply } from 'react-native-performance-kit';
+import { isMonitoring } from 'react-native-performance-kit';
 
-// ...
-
-const result = multiply(3, 7);
+// The public API is under construction (see specs/plan.md).
+const monitoring = isMonitoring(); // false
 ```
 
 

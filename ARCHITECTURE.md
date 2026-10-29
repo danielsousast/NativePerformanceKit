@@ -6,7 +6,7 @@ _Updated: 2026-10-29_
 
 NativePerformanceKit is a React Native library (Turbo Native Module + Codegen) exposing process memory and FPS snapshots with a start/stop monitoring lifecycle. See `specs/spec.md` (WHAT) and `specs/plan.md` (HOW).
 
-**Current reality:** Phase 1 baseline. The library is the untouched `create-react-native-library@0.64.0` turbo-module template (sample `multiply` method); the example app is the template's Expo example, moved to the repo root. Everything marked `(planned)` is not built.
+**Current reality:** Phase 2 contract. The TurboModule spec defines the full native contract; only `isMonitoring()` (returns false) is functional, the other methods reject with `E_UNIMPLEMENTED` until Phases 3-5. The example calls `isMonitoring()` natively on both platforms. Everything marked `(planned)` is not built.
 
 ## Directory map
 
@@ -21,7 +21,7 @@ NativePerformanceKit/
 ├── packages/react-native-performance-kit/   the library (npm: react-native-performance-kit)
 │   ├── package.json               codegenConfig, bob targets, jest preset, eslint
 │   ├── src/NativePerformanceKit.ts   Codegen spec (TurboModule `Spec`, name "PerformanceKit")
-│   ├── src/index.tsx, src/multiply*.tsx   template sample API (replaced in Phase 2)
+│   ├── src/types.ts, src/index.tsx   public types (`MonitorOptions`, `PerformanceSnapshot`); index exports `isMonitoring` + types
 │   ├── src/__tests__/             Jest tests (template has one `it.todo`)
 │   ├── android/                   Kotlin: PerformanceKitModule, PerformanceKitPackage (com.performancekit)
 │   ├── ios/PerformanceKit.h/.mm   Objective-C++ module conforming to generated NativePerformanceKitSpec
@@ -38,15 +38,19 @@ NativePerformanceKit/
 
 ## Components
 
-Built (template baseline):
+Built:
+- TurboModule spec (`src/NativePerformanceKit.ts`): `startMonitoring(intervalMs)`, `stopMonitoring()`, `isMonitoring()`, `getSnapshot(): Promise<NativeSnapshot>` with `fps: number | null` (Codegen accepts the nullable). A compile-time check in `src/__tests__/index.test.tsx` keeps `NativeSnapshot` assignable to the public `PerformanceSnapshot`.
+- Android/iOS stubs: `isMonitoring` returns false; start/stop/getSnapshot reject `E_UNIMPLEMENTED`.
+- iOS registration: works at runtime with the template as-is (verified on simulator) despite the empty `moduleMapping`.
+
+Template baseline:
 - Codegen spec: `src/NativePerformanceKit.ts` exports `TurboModuleRegistry.getEnforcing<Spec>('PerformanceKit')`. `codegenConfig` = `{ name: "PerformanceKitSpec", type: "modules", jsSrcsDir: "src", android.javaPackageName: "com.performancekit" }`.
 - Android: `PerformanceKitModule` extends the generated abstract `NativePerformanceKitSpec`; `PerformanceKitPackage` extends `BaseReactPackage` and reports `isTurboModule = true`. Registered via autolinking (no manual MainApplication edits).
 - iOS: `PerformanceKit` (NSObject) conforms to the generated `NativePerformanceKitSpec` protocol, returns `NativePerformanceKitSpecJSI` from `getTurboModule:`, `+moduleName` = "PerformanceKit". Pod `PerformanceKit` via `install_modules_dependencies`. Swift is not offered by the template for turbo modules (`kotlin-objc` only); Swift collectors, if used, are called from the `.mm` module.
 - Example: Expo dev-build app resolving the library from source through the `react-native-performance-kit-source` export condition.
 
 Planned (per spec section 7):
-- TypeScript layer (planned): public API (`startMonitoring`, `stopMonitoring`, `isMonitoring`, `getSnapshot`), validation, error normalization, optional hook.
-- TurboModule spec (planned): replace `multiply`; nullable fps may need normalization in the wrapper.
+- TypeScript layer (planned): remaining public API (`startMonitoring`, `stopMonitoring`, `getSnapshot`), validation, error normalization, optional hook.
 - Android collectors (planned): memory metric plus Choreographer FPS, one shared session.
 - iOS collectors (planned): memory metric plus CADisplayLink FPS.
 

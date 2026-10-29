@@ -1,12 +1,12 @@
 import { Text, View, StyleSheet } from 'react-native';
-import { multiply } from 'react-native-performance-kit';
+import { isMonitoring } from 'react-native-performance-kit';
 
-const result = multiply(3, 7);
+const monitoring = isMonitoring();
 
 export default function App() {
   return (
     <View style={styles.container}>
-      <Text>Result: {result}</Text>
+      <Text>Monitoring: {String(monitoring)}</Text>
     </View>
   );
 }

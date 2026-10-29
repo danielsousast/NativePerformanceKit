@@ -1,10 +1,34 @@
 #import "PerformanceKit.h"
 
 @implementation PerformanceKit
-- (NSNumber *)multiply:(double)a b:(double)b {
-  NSNumber *result = @(a * b);
+// Phase 2 contract stub: collectors and lifecycle arrive in phases 3-5.
+- (void)startMonitoring:(double)intervalMs
+                resolve:(RCTPromiseResolveBlock)resolve
+                 reject:(RCTPromiseRejectBlock)reject
+{
+  [self rejectUnimplemented:reject];
+}
 
-  return result;
+- (void)stopMonitoring:(RCTPromiseResolveBlock)resolve
+                reject:(RCTPromiseRejectBlock)reject
+{
+  [self rejectUnimplemented:reject];
+}
+
+- (NSNumber *)isMonitoring
+{
+  return @NO;
+}
+
+- (void)getSnapshot:(RCTPromiseResolveBlock)resolve
+             reject:(RCTPromiseRejectBlock)reject
+{
+  [self rejectUnimplemented:reject];
+}
+
+- (void)rejectUnimplemented:(RCTPromiseRejectBlock)reject
+{
+  reject(@"E_UNIMPLEMENTED", @"Not implemented yet", nil);
 }
 
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:

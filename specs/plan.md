@@ -35,13 +35,13 @@ The original generated library compiles before custom implementation begins.
 
 ### Tasks
 
-- [ ] Define the native specification.
-- [ ] Define snapshot and configuration types.
-- [ ] Configure Codegen using the template's existing conventions.
-- [ ] Implement the smallest possible native method.
-- [ ] Verify Android registration.
-- [ ] Verify iOS registration.
-- [ ] Verify TypeScript-to-native communication.
+- [x] Define the native specification.
+- [x] Define snapshot and configuration types.
+- [x] Configure Codegen using the template's existing conventions.
+- [x] Implement the smallest possible native method.
+- [x] Verify Android registration.
+- [x] Verify iOS registration.
+- [x] Verify TypeScript-to-native communication.
 
 ### Deliverables
 
