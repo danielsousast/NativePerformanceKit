@@ -6,7 +6,7 @@ _Updated: 2026-10-29_
 
 NativePerformanceKit is a React Native library (Turbo Native Module + Codegen) exposing process memory and FPS snapshots with a start/stop monitoring lifecycle. See `specs/spec.md` (WHAT) and `specs/plan.md` (HOW).
 
-**Current reality:** Phase 6. The start/stop/isMonitoring lifecycle works on both platforms through one shared native `MonitoringSession`; `getSnapshot()` returns memory and FPS (`fps` null when unavailable). The example shows a memory snapshot but has no start/stop controls yet. Everything marked `(planned)` is not built.
+**Current reality:** Phase 7. The start/stop/isMonitoring lifecycle works on both platforms through one shared native `MonitoringSession`; `getSnapshot()` returns memory and FPS (`fps` null when unavailable). The example is a dashboard with start/stop, memory/FPS, bounded history and errors, and memory-pressure and frame-load scenarios (device validation pending). Everything marked `(planned)` is not built.
 
 ## Directory map
 
@@ -29,7 +29,7 @@ NativePerformanceKit/
 │   ├── PerformanceKit.podspec     install_modules_dependencies, min iOS from RN
 │   ├── .github/, turbo.json       template CI (not active at this path; Phase 8)
 └── example/                       Expo app, development build (expo ~58)
-    ├── src/App.tsx                calls the library's sample method
+    ├── src/App.tsx, FrameLoad.tsx, scenarios.ts   dashboard on usePerformanceMonitor; bounded history/error log; memory-pressure and UI-load scenarios
     ├── metro.config.js            react-native-monorepo-config, root = repo root, source condition
     ├── babel.config.js            bob babel config aliasing the library to its src/
     ├── react-native.config.js     autolinks packages/react-native-performance-kit

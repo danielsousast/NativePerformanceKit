@@ -149,13 +149,13 @@ A consumer can use the SDK without importing internal native specifications.
 
 ### Tasks
 
-- [ ] Build a monitoring dashboard.
-- [ ] Display memory and FPS.
-- [ ] Add start and stop controls.
-- [ ] Show timestamps and errors.
-- [ ] Maintain a bounded history.
-- [ ] Add a controlled memory-pressure scenario.
-- [ ] Add a controlled frame-drop scenario.
+- [x] Build a monitoring dashboard.
+- [x] Display memory and FPS.
+- [x] Add start and stop controls.
+- [x] Show timestamps and errors.
+- [x] Maintain a bounded history.
+- [x] Add a controlled memory-pressure scenario.
+- [x] Add a controlled frame-drop scenario.
 - [ ] Validate on physical devices.
 
 ### Deliverables

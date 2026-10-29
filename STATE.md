@@ -5,7 +5,7 @@ _Updated: 2026-10-29_
 ## Current
 - Phase: 7 — Example Application
 - In progress: none
-- Next: Build a monitoring dashboard.
+- Next: Validate on physical devices (Phase 7, last task; needs hardware).
 
 ## Done
 - spec-driven init — 2026-10-29
@@ -16,13 +16,15 @@ _Updated: 2026-10-29_
 - Phase 4 — Monitoring Lifecycle (all 8 tasks) — validated 2026-10-29
 - Phase 5 — FPS Collection (all 7 tasks) — validated 2026-10-29
 - Phase 6 — Public TypeScript API (all 8 tasks) — validated 2026-10-29
+- Phase 7 — Example Application (7 of 8 tasks; physical-device validation open) — validated 2026-10-29
 
 ## Last validation
-- Task: Phase 6 — Public TypeScript API
-- Verdict: PASS (independent subagent, all 8 tasks and exit criterion)
-- Evidence: `yarn typecheck|lint|test` exit 0 (19 Jest tests, 2 suites); example `tsc`/`expo lint` exit 0. Non-blocking: an `intervalMs` change in the hook fires stop then start (activeHooks hits 0 between cleanup and effect); no hook test for an invalid interval or an interval change; the last hook unmounting also stops a session started manually.
+- Task: Phase 7 — dashboard, memory/FPS display, start/stop, timestamps/errors, bounded history, memory-pressure and frame-drop scenarios
+- Verdict: PASS (independent subagent, items 1-7)
+- Evidence: example `tsc --noEmit` and `expo lint` clean; `yarn typecheck|lint|test` exit 0 (19 tests); `expo export --platform ios` bundles. Not run on a simulator/device by the validator. Non-blocking: history rows keyed by timestamp; last values stay visible after Stop.
 
 ## Blockers / open questions
+- Phase 7 "Validate on physical devices" and the screenshots/video deliverable need real hardware; unchecked in plan.md.
 - `.nvmrc` (template) pins Node v24.22.1; environment verified with v24.21.0.
 - Library `package.json` author URL and repository URL are placeholders (`https://github.com/`, `github.com/example/react-native-performance-kit`); README links point to the repo-root CONTRIBUTING/CODE_OF_CONDUCT via relative paths, which break on npm until the real repo URL is set.
 - Template CI (`packages/react-native-performance-kit/.github`, `turbo.json`) uses library-relative `example/` paths and is inactive at that location: Phase 8.
@@ -33,6 +35,7 @@ _Updated: 2026-10-29_
 - A Metro dev server (`expo start`, port 8081) started for the runtime check may still be running; the `pkill` was denied. Stop it manually if needed.
 
 ## Decisions
+- 2026-10-29: Example is a single-screen app (`example/src/App.tsx`, `FrameLoad.tsx`, `scenarios.ts`) built on `usePerformanceMonitor`; history (30) and error log (30) are bounded in the app. Memory pressure = up to 10 x 16 MiB touched `Uint8Array`s; frame load = 1500 views re-rendered every 16 ms for 5 s (UI-thread load; JS-only blocking would not move the display-cadence FPS). Effect on the metric is unmeasured until device validation.
 - 2026-10-29: FPS = observed display cadence over a 1 s sliding window, `(frames - 1) / span`; null when unmeasurable (see ARCHITECTURE). Frame observer lives in the shared session; an interval change restarts it (FPS null for ~0.5 s). Idle apps read about the refresh rate by design; README (Phase 10) must document this and the vsync power cost.
 - 2026-10-29: Existing spec.md and plan.md kept unchanged.
 - 2026-10-29: Library generated with create-react-native-library@0.64.0 (`turbo-module`, `kotlin-objc`, expo example, eslint, jest). `kotlin-swift` is only offered for Nitro; Swift collectors, if used, will be called from the ObjC++ module.
