@@ -6,7 +6,7 @@ _Updated: 2026-10-29_
 
 NativePerformanceKit is a React Native library (Turbo Native Module + Codegen) exposing process memory and FPS snapshots with a start/stop monitoring lifecycle. See `specs/spec.md` (WHAT) and `specs/plan.md` (HOW).
 
-**Current reality:** Phase 2 contract. The TurboModule spec defines the full native contract; only `isMonitoring()` (returns false) is functional, the other methods reject with `E_UNIMPLEMENTED` until Phases 3-5. The example calls `isMonitoring()` natively on both platforms. Everything marked `(planned)` is not built.
+**Current reality:** Phase 3. `getSnapshot()` returns a real memory snapshot on both platforms (`fps` null); `isMonitoring()` returns false; `startMonitoring`/`stopMonitoring` reject with `E_UNIMPLEMENTED` until Phase 4. The example shows the memory snapshot. Everything marked `(planned)` is not built.
 
 ## Directory map
 
@@ -23,8 +23,9 @@ NativePerformanceKit/
 │   ├── src/NativePerformanceKit.ts   Codegen spec (TurboModule `Spec`, name "PerformanceKit")
 │   ├── src/types.ts, src/index.tsx   public types (`MonitorOptions`, `PerformanceSnapshot`); index exports `isMonitoring` + types
 │   ├── src/__tests__/             Jest tests (template has one `it.todo`)
-│   ├── android/                   Kotlin: PerformanceKitModule, PerformanceKitPackage (com.performancekit)
+│   ├── android/                   Kotlin: PerformanceKitModule, PerformanceKitPackage, MemoryCollector (com.performancekit); JUnit in src/test
 │   ├── ios/PerformanceKit.h/.mm   Objective-C++ module conforming to generated NativePerformanceKitSpec
+│   ├── ios/MemoryCollector.swift  Swift collector (PKMemoryCollector); ios/Tests/ XCTests via run.sh (excluded from the pod)
 │   ├── PerformanceKit.podspec     install_modules_dependencies, min iOS from RN
 │   ├── .github/, turbo.json       template CI (not active at this path; Phase 8)
 └── example/                       Expo app, development build (expo ~58)
@@ -39,6 +40,7 @@ NativePerformanceKit/
 ## Components
 
 Built:
+- Memory collectors: Android `MemoryCollector` reports total PSS (KB to bytes, `Long`); iOS `PKMemoryCollector` reports `phys_footprint` (bytes). Timestamp = Unix epoch ms. Unavailable/non-positive reads throw and the module rejects `E_MEMORY_UNAVAILABLE`. Readers and clock are injected for tests. `getSnapshot` is exported from `src/index.tsx` as a pass-through.
 - TurboModule spec (`src/NativePerformanceKit.ts`): `startMonitoring(intervalMs)`, `stopMonitoring()`, `isMonitoring()`, `getSnapshot(): Promise<NativeSnapshot>` with `fps: number | null` (Codegen accepts the nullable). A compile-time check in `src/__tests__/index.test.tsx` keeps `NativeSnapshot` assignable to the public `PerformanceSnapshot`.
 - Android/iOS stubs: `isMonitoring` returns false; start/stop/getSnapshot reject `E_UNIMPLEMENTED`.
 - iOS registration: works at runtime with the template as-is (verified on simulator) despite the empty `moduleMapping`.
@@ -51,8 +53,8 @@ Template baseline:
 
 Planned (per spec section 7):
 - TypeScript layer (planned): remaining public API (`startMonitoring`, `stopMonitoring`, `getSnapshot`), validation, error normalization, optional hook.
-- Android collectors (planned): memory metric plus Choreographer FPS, one shared session.
-- iOS collectors (planned): memory metric plus CADisplayLink FPS.
+- Android collectors (planned): Choreographer FPS and the shared session (memory collector is built).
+- iOS collectors (planned): CADisplayLink FPS and the shared session (memory collector is built).
 
 ## Data / control flow (planned)
 

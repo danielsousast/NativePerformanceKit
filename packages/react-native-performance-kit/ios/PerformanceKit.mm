@@ -1,7 +1,24 @@
 #import "PerformanceKit.h"
 
-@implementation PerformanceKit
-// Phase 2 contract stub: collectors and lifecycle arrive in phases 3-5.
+#if __has_include("PerformanceKit-Swift.h")
+#import "PerformanceKit-Swift.h"
+#else
+#import <PerformanceKit/PerformanceKit-Swift.h>
+#endif
+
+@implementation PerformanceKit {
+  PKMemoryCollector *_memoryCollector;
+}
+
+- (instancetype)init
+{
+  if (self = [super init]) {
+    _memoryCollector = [PKMemoryCollector new];
+  }
+  return self;
+}
+
+// Lifecycle and FPS arrive in phases 4-5; getSnapshot reports memory on demand.
 - (void)startMonitoring:(double)intervalMs
                 resolve:(RCTPromiseResolveBlock)resolve
                  reject:(RCTPromiseRejectBlock)reject
@@ -23,7 +40,13 @@
 - (void)getSnapshot:(RCTPromiseResolveBlock)resolve
              reject:(RCTPromiseRejectBlock)reject
 {
-  [self rejectUnimplemented:reject];
+  NSError *error = nil;
+  NSDictionary *snapshot = [_memoryCollector snapshotAndReturnError:&error];
+  if (snapshot) {
+    resolve(snapshot);
+  } else {
+    reject(@"E_MEMORY_UNAVAILABLE", error.localizedDescription, error);
+  }
 }
 
 - (void)rejectUnimplemented:(RCTPromiseRejectBlock)reject

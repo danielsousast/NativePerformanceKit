@@ -57,15 +57,15 @@ The example application can invoke a native method on both platforms.
 
 ### Tasks
 
-- [ ] Define the memory metric used on Android.
-- [ ] Define the memory metric used on iOS.
-- [ ] Implement the Android collector in Kotlin.
-- [ ] Implement the iOS collector in Swift.
-- [ ] Normalize values to bytes.
-- [ ] Add timestamps.
-- [ ] Handle measurement failures.
-- [ ] Expose a snapshot through the TurboModule.
-- [ ] Compare results against platform profiling tools.
+- [x] Define the memory metric used on Android.
+- [x] Define the memory metric used on iOS.
+- [x] Implement the Android collector in Kotlin.
+- [x] Implement the iOS collector in Swift.
+- [x] Normalize values to bytes.
+- [x] Add timestamps.
+- [x] Handle measurement failures.
+- [x] Expose a snapshot through the TurboModule.
+- [x] Compare results against platform profiling tools.
 
 ### Deliverables
 
