@@ -1,13 +1,14 @@
 {
   "expo": {
-    "name": "example",
-    "slug": "example",
+    "name": "PerformanceKit Example",
+    "slug": "react-native-performance-kit-example",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "performancekit.example"
     },
     "android": {
       "adaptiveIcon": {
@@ -15,7 +16,8 @@
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+      },
+      "package": "performancekit.example"
     },
     "web": {
       "favicon": "./assets/favicon.png"

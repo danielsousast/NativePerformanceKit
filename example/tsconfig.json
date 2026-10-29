@@ -1,0 +1,7 @@
+{
+  "extends": "../packages/react-native-performance-kit/tsconfig",
+  "compilerOptions": {
+    // Avoid expo-cli auto-generating a tsconfig
+    "rootDir": ".."
+  }
+}
