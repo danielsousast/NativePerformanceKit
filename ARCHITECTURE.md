@@ -15,14 +15,14 @@ NativePerformanceKit/
 ├── package.json                   private Yarn 4 workspace root (packages/*, example); forwards scripts
 ├── .yarnrc.yml, .yarn/releases/   Yarn 4.18.1, nodeLinker node-modules, nmHoistingLimits workspaces
 ├── .nvmrc, .editorconfig, .gitignore, .gitattributes, .watchmanconfig
-├── README.md                      pointer to the library README, example and docs
+├── README.md                      the library README (single source; copied into the package by `prepack`)
 ├── CONTRIBUTING.md                development environment and workflow
 ├── .github/workflows/ci.yml       CI: lint, test, package, android, ios; .github/actions/setup (Node + yarn cache)
 ├── scripts/verify-package.sh      pack, clean install, shipped-files and consumer typecheck
 ├── specs/spec.md, specs/plan.md   requirements and phased plan
 ├── ARCHITECTURE.md, STATE.md      this file / progress tracker
 ├── packages/react-native-performance-kit/   the library (npm: react-native-performance-kit)
-│   ├── README.md, CHANGELOG.md, LICENSE   public docs (English), shipped in the npm package
+│   ├── CHANGELOG.md, LICENSE      shipped in the npm package (README.md is a git-ignored copy made by `prepack`)
 │   ├── package.json               codegenConfig, bob targets, jest preset, eslint
 │   ├── src/NativePerformanceKit.ts   Codegen spec (TurboModule `Spec`, name "PerformanceKit")
 │   ├── src/types.ts, api.ts, errors.ts, usePerformanceMonitor.ts, index.tsx   public types, wrapper, errors, hook; index is the only public entry

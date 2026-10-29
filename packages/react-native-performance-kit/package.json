@@ -36,6 +36,7 @@
   "scripts": {
     "clean": "del-cli lib",
     "prepare": "bob build",
+    "prepack": "cp ../../README.md README.md",
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "test": "jest"
