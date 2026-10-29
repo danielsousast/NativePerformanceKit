@@ -6,7 +6,7 @@ _Updated: 2026-10-29_
 
 NativePerformanceKit is a React Native library (Turbo Native Module + Codegen) exposing process memory and FPS snapshots with a start/stop monitoring lifecycle. See `specs/spec.md` (WHAT) and `specs/plan.md` (HOW).
 
-**Current reality:** Phase 4. The start/stop/isMonitoring lifecycle works on both platforms through one shared native `MonitoringSession`; `getSnapshot()` returns memory (`fps` null until Phase 5). The example shows a memory snapshot but has no start/stop controls yet. Everything marked `(planned)` is not built.
+**Current reality:** Phase 5. The start/stop/isMonitoring lifecycle works on both platforms through one shared native `MonitoringSession`; `getSnapshot()` returns memory and FPS (`fps` null when unavailable). The example shows a memory snapshot but has no start/stop controls yet. Everything marked `(planned)` is not built.
 
 ## Directory map
 
@@ -23,9 +23,9 @@ NativePerformanceKit/
 │   ├── src/NativePerformanceKit.ts   Codegen spec (TurboModule `Spec`, name "PerformanceKit")
 │   ├── src/types.ts, src/index.tsx   public types (`MonitorOptions`, `PerformanceSnapshot`); index exports `isMonitoring` + types
 │   ├── src/__tests__/             Jest tests (template has one `it.todo`)
-│   ├── android/                   Kotlin: PerformanceKitModule, PerformanceKitPackage, MemoryCollector (com.performancekit); JUnit in src/test
+│   ├── android/                   Kotlin: PerformanceKitModule, PerformanceKitPackage, MemoryCollector, MonitoringSession, FpsCalculator, FrameObserver (com.performancekit); JUnit in src/test
 │   ├── ios/PerformanceKit.h/.mm   Objective-C++ module conforming to generated NativePerformanceKitSpec
-│   ├── ios/MemoryCollector.swift  Swift collector (PKMemoryCollector); ios/Tests/ XCTests via run.sh (excluded from the pod)
+│   ├── ios/MemoryCollector.swift  Swift collector (PKMemoryCollector); also MonitoringSession, FpsCalculator, FrameObserver (.swift); ios/Tests/ XCTests via run.sh (excluded from the pod)
 │   ├── PerformanceKit.podspec     install_modules_dependencies, min iOS from RN
 │   ├── .github/, turbo.json       template CI (not active at this path; Phase 8)
 └── example/                       Expo app, development build (expo ~58)
@@ -43,6 +43,7 @@ Built:
 - Memory collectors: Android `MemoryCollector` reports total PSS (KB to bytes, `Long`); iOS `PKMemoryCollector` reports `phys_footprint` (bytes). Timestamp = Unix epoch ms. Unavailable/non-positive reads throw and the module rejects `E_MEMORY_UNAVAILABLE`. Readers and clock are injected for tests. `getSnapshot` is exported from `src/index.tsx` as a pass-through.
 - TurboModule spec (`src/NativePerformanceKit.ts`): `startMonitoring(intervalMs)`, `stopMonitoring()`, `isMonitoring()`, `getSnapshot(): Promise<NativeSnapshot>` with `fps: number | null` (Codegen accepts the nullable). A compile-time check in `src/__tests__/index.test.tsx` keeps `NativeSnapshot` assignable to the public `PerformanceSnapshot`.
 - Monitoring session (Android `MonitoringSession.kt`, iOS `MonitoringSession.swift` / `PKMonitoringSession`): one per module. `start(intervalMs)` validates (finite, >= 100 ms, else `E_INVALID_INTERVAL`, running session untouched); a running session with the same interval is a no-op, a different interval replaces the single ticker; `stop()` is idempotent. One background ticker (daemon single-thread executor / utility `DispatchSourceTimer`) samples memory and keeps only the latest sample; ticks that race with stop/restart are discarded; a failed read clears the cached sample (snapshot then reports the failure) without stopping the session. `getSnapshot` returns the latest sample while monitoring, else a fresh read. Module invalidation stops the session (Android `invalidate()`, iOS `RCTInvalidating`). The `Ticker` seam is faked in tests.
+- FPS: `FpsCalculator` (Android Kotlin / iOS Swift, same algorithm) keeps frame timestamps in a 1 s sliding window and reports `(frames - 1) / span`. It is null with < 2 frames, a span under 0.5 s (window not yet filled), or no frame within the last 1 s (backgrounded / main thread blocked); duplicate or out-of-order timestamps are ignored. A `FrameObserver` (Android `ChoreographerFrameObserver` re-posting a Choreographer callback on the main looper; iOS `DisplayLinkFrameObserver` with a `CADisplayLink` on the main run loop via a weak target) only records timestamps. The session owns one observer, started/stopped with the ticker (a new interval restarts both, so FPS is null until the window refills); each tick stores memory + FPS in the single latest sample. Stopped sessions report `fps` null. Limitation: the observer keeps the display ticking, so FPS is display cadence (an idle app reads about the refresh rate), not proof RN rendered each frame, and continuous vsync wake-ups cost some power.
 - iOS registration: works at runtime with the template as-is (verified on simulator) despite the empty `moduleMapping`.
 
 Template baseline:
@@ -53,8 +54,6 @@ Template baseline:
 
 Planned (per spec section 7):
 - TypeScript layer (planned): validation, error normalization, optional hook (thin `startMonitoring` (default 1000 ms), `stopMonitoring`, `getSnapshot`, `isMonitoring` pass-throughs exist).
-- Android collectors (planned): Choreographer FPS (the shared session is built; it will own the frame observer).
-- iOS collectors (planned): CADisplayLink FPS (the shared session is built; it will own the frame observer).
 
 ## Data / control flow (planned)
 

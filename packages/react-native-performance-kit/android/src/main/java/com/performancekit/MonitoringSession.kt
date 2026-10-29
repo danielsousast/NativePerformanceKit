@@ -29,14 +29,19 @@ private class ExecutorTicker : Ticker {
 }
 
 /**
- * The single shared monitoring session. While running, one background ticker samples memory every
- * interval and keeps only the latest sample (bounded: one value). Starting again never creates a
- * second ticker; the interval is simply replaced.
+ * The single shared monitoring session. While running, one frame observer feeds an [FpsCalculator] and
+ * one background ticker samples memory and FPS every interval, keeping only the latest sample (bounded:
+ * one value). Starting again never creates a second ticker or observer; a new interval restarts both
+ * (so FPS is null until its window refills). While stopped, no frames are observed and FPS is null.
  */
 class MonitoringSession(
   private val collector: MemoryCollector,
+  private val newFrameObserver: () -> FrameObserver = { ChoreographerFrameObserver() },
+  private val nanoTime: () -> Long = System::nanoTime,
   private val newTicker: () -> Ticker = { ExecutorTicker() }
 ) {
+  private val fpsCalculator = FpsCalculator()
+  private var frames: FrameObserver? = null
   private var ticker: Ticker? = null
   private var intervalMs: Long = 0L
   private var latest: MemorySnapshot? = null
@@ -51,13 +56,18 @@ class MonitoringSession(
     if (ticker != null && period == this.intervalMs) return
     stop()
     val started = newTicker()
+    val observer = newFrameObserver()
     try {
+      observer.start(fpsCalculator::record)
       started.start(period) { sample(started) }
     } catch (e: RuntimeException) {
       started.stop()
+      observer.stop()
+      fpsCalculator.reset()
       throw e
     }
     ticker = started
+    frames = observer
     this.intervalMs = period
   }
 
@@ -65,6 +75,9 @@ class MonitoringSession(
   fun stop() {
     ticker?.stop()
     ticker = null
+    frames?.stop()
+    frames = null
+    fpsCalculator.reset()
     latest = null
   }
 
@@ -78,7 +91,7 @@ class MonitoringSession(
   private fun sample(source: Ticker) {
     // A failed read must not stop the session; drop the stale value so snapshot() reports the failure.
     val result = try {
-      collector.snapshot()
+      collector.snapshot().copy(fps = fpsCalculator.fps(nanoTime()))
     } catch (e: MemoryUnavailableException) {
       null
     }

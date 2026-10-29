@@ -104,13 +104,13 @@ Monitoring can start and stop repeatedly without leaked timers or callbacks.
 
 ### Tasks
 
-- [ ] Implement Android frame observation using an appropriate native callback mechanism.
-- [ ] Implement iOS frame observation using CADisplayLink.
-- [ ] Define the FPS calculation window.
-- [ ] Handle unavailable and invalid samples.
-- [ ] Return null when FPS cannot be measured.
-- [ ] Release frame observers on stop.
-- [ ] Validate behavior during animations and idle periods.
+- [x] Implement Android frame observation using an appropriate native callback mechanism.
+- [x] Implement iOS frame observation using CADisplayLink.
+- [x] Define the FPS calculation window.
+- [x] Handle unavailable and invalid samples.
+- [x] Return null when FPS cannot be measured.
+- [x] Release frame observers on stop.
+- [x] Validate behavior during animations and idle periods.
 
 ### Deliverables
 

@@ -2,6 +2,7 @@ package com.performancekit
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -26,8 +27,26 @@ private class FakeTicker : Ticker {
   fun tick() = task!!.run()
 }
 
+private class FakeFrameObserver : FrameObserver {
+  var onFrame: ((Long) -> Unit)? = null
+  var running = false
+
+  override fun start(onFrame: (Long) -> Unit) {
+    this.onFrame = onFrame
+    running = true
+  }
+
+  override fun stop() {
+    running = false
+  }
+
+  fun frame(timeNanos: Long) = onFrame!!(timeNanos)
+}
+
 class MonitoringSessionTest {
   private val tickers = mutableListOf<FakeTicker>()
+  private val observers = mutableListOf<FakeFrameObserver>()
+  private var nowNanos = 0L
   private var pssKb = 1000
   private var failReads = false
   private val collector = MemoryCollector(
@@ -35,7 +54,17 @@ class MonitoringSessionTest {
     now = { 42L }
   )
 
-  private fun session() = MonitoringSession(collector) { FakeTicker().also { tickers.add(it) } }
+  private fun session() = MonitoringSession(
+    collector,
+    newFrameObserver = { FakeFrameObserver().also { observers.add(it) } },
+    nanoTime = { nowNanos }
+  ) { FakeTicker().also { tickers.add(it) } }
+
+  /** Delivers 60 Hz frames from [fromNanos] for one second and moves the clock to its end. */
+  private fun runFrames(observer: FakeFrameObserver, fromNanos: Long = 0L) {
+    for (i in 0..60) observer.frame(fromNanos + i * 16_666_667L)
+    nowNanos = fromNanos + 1_000_000_000L
+  }
 
   @Test
   fun startAndStopToggleStatus() {
@@ -167,9 +196,71 @@ class MonitoringSessionTest {
       override fun start(periodMs: Long, task: Runnable) = throw IllegalStateException("no thread")
       override fun stop() { stopped = true }
     }
-    val s = MonitoringSession(collector) { failing }
+    val observer = FakeFrameObserver()
+    val s = MonitoringSession(collector, newFrameObserver = { observer }) { failing }
     assertThrows(IllegalStateException::class.java) { s.start(500.0) }
     assertTrue(failing.stopped)
+    assertFalse(observer.running)
     assertFalse(s.isMonitoring())
+  }
+
+  @Test
+  fun fpsIsNullUntilTheWindowHasFrames() {
+    val s = session()
+    s.start(500.0)
+    tickers.single().tick()
+    assertNull(s.snapshot().fps)
+  }
+
+  @Test
+  fun sampleReportsFpsFromObservedFrames() {
+    val s = session()
+    s.start(500.0)
+    runFrames(observers.single())
+    tickers.single().tick()
+    assertEquals(60.0, s.snapshot().fps!!, 0.5)
+  }
+
+  @Test
+  fun snapshotWhileStoppedHasNoFps() {
+    val s = session()
+    s.start(500.0)
+    runFrames(observers.single())
+    tickers.single().tick()
+    s.stop()
+    assertNull(s.snapshot().fps)
+  }
+
+  @Test
+  fun stopAndRestartReleaseObserversAndClearFrames() {
+    val s = session()
+    s.start(500.0)
+    runFrames(observers[0])
+    s.start(250.0)
+    assertFalse(observers[0].running)
+    assertTrue(observers[1].running)
+    tickers[1].tick()
+    assertNull(s.snapshot().fps)
+    s.stop()
+    s.stop()
+    assertTrue(observers.none { it.running })
+  }
+
+  @Test
+  fun repeatedStartWithSameIntervalKeepsOneObserver() {
+    val s = session()
+    s.start(500.0)
+    s.start(500.0)
+    assertEquals(1, observers.size)
+  }
+
+  @Test
+  fun framesStoppedForLongerThanTheWindowMakeFpsNull() {
+    val s = session()
+    s.start(500.0)
+    runFrames(observers.single())
+    nowNanos += 2_000_000_000L
+    tickers.single().tick()
+    assertNull(s.snapshot().fps)
   }
 }

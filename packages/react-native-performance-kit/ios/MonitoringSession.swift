@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(UIKit)
+import QuartzCore
+#endif
 
 enum MonitoringSessionError: Error, LocalizedError {
   case invalidInterval(Double)
@@ -38,27 +41,43 @@ final class DispatchTicker: Ticker {
   deinit { stop() }
 }
 
-/// The single shared monitoring session. While running, one background timer samples memory every
-/// interval and keeps only the latest sample (bounded: one value). Starting again never creates a
-/// second timer; the interval is simply replaced.
+/// The single shared monitoring session. While running, one frame observer feeds an `FpsCalculator` and
+/// one background timer samples memory and FPS every interval, keeping only the latest sample (bounded:
+/// one value). Starting again never creates a second timer or observer; a new interval restarts both
+/// (so FPS is nil until its window refills). While stopped, no frames are observed and FPS is nil.
 @objc(PKMonitoringSession)
 public final class MonitoringSession: NSObject {
   static let minIntervalMs = 100.0
 
   private let collector: MemoryCollector
   private let makeTicker: () -> Ticker
+  private let makeFrameObserver: () -> FrameObserver
+  private let now: () -> TimeInterval
+  private let fpsCalculator = FpsCalculator()
   private let lock = NSLock()
   private var ticker: Ticker?
+  private var frames: FrameObserver?
   private var periodMs = 0
   private var latest: [String: Any]?
 
   @objc public override convenience init() {
-    self.init(collector: MemoryCollector(), makeTicker: { DispatchTicker() })
+    #if canImport(UIKit)
+    self.init(
+      collector: MemoryCollector(), makeTicker: { DispatchTicker() },
+      makeFrameObserver: { DisplayLinkFrameObserver() }, now: CACurrentMediaTime)
+    #else
+    fatalError("PKMonitoringSession needs CADisplayLink (UIKit)")
+    #endif
   }
 
-  init(collector: MemoryCollector, makeTicker: @escaping () -> Ticker) {
+  init(
+    collector: MemoryCollector, makeTicker: @escaping () -> Ticker,
+    makeFrameObserver: @escaping () -> FrameObserver, now: @escaping () -> TimeInterval
+  ) {
     self.collector = collector
     self.makeTicker = makeTicker
+    self.makeFrameObserver = makeFrameObserver
+    self.now = now
   }
 
   deinit { stop() }
@@ -74,8 +93,11 @@ public final class MonitoringSession: NSObject {
     if ticker != nil && period == periodMs { return }
     stopLocked()
     let started = makeTicker()
+    let observer = makeFrameObserver()
     ticker = started
+    frames = observer
     periodMs = period
+    observer.start { [fpsCalculator] in fpsCalculator.record($0) }
     started.start(periodMs: period) { [weak self, weak started] in
       guard let self = self, let started = started else { return }
       self.sample(from: started)
@@ -105,12 +127,16 @@ public final class MonitoringSession: NSObject {
   private func stopLocked() {
     ticker?.stop()
     ticker = nil
+    frames?.stop()
+    frames = nil
+    fpsCalculator.reset()
     latest = nil
   }
 
   private func sample(from source: Ticker) {
     // A failed read must not stop the session; drop the stale value so snapshot() reports the failure.
-    let result = try? collector.snapshot()
+    var result = try? collector.snapshot()
+    if let fps = fpsCalculator.fps(now: now()) { result?["fps"] = fps }
     lock.lock()
     defer { lock.unlock() }
     // Ignore a tick that raced with stop() or a restart.

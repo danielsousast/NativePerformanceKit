@@ -42,7 +42,6 @@
   return @(_session.isMonitoring);
 }
 
-// FPS arrives in Phase 5; the snapshot carries memory only.
 - (void)getSnapshot:(RCTPromiseResolveBlock)resolve
              reject:(RCTPromiseRejectBlock)reject
 {

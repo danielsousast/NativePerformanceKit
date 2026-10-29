@@ -25,7 +25,6 @@ class PerformanceKitModule(reactContext: ReactApplicationContext) :
 
   override fun isMonitoring(): Boolean = session.isMonitoring()
 
-  // FPS arrives in Phase 5; the snapshot carries memory only.
   override fun getSnapshot(promise: Promise) {
     try {
       val snapshot = session.snapshot()
@@ -33,7 +32,7 @@ class PerformanceKitModule(reactContext: ReactApplicationContext) :
         Arguments.createMap().apply {
           putDouble("timestamp", snapshot.timestampMs.toDouble())
           putDouble("memoryUsageBytes", snapshot.memoryUsageBytes.toDouble())
-          putNull("fps")
+          if (snapshot.fps != null) putDouble("fps", snapshot.fps) else putNull("fps")
         }
       )
     } catch (e: MemoryUnavailableException) {

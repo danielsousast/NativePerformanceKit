@@ -15,18 +15,51 @@ private final class FakeTicker: Ticker {
   func tick() { task?() }
 }
 
+private final class FakeFrameObserver: FrameObserver {
+  var onFrame: ((TimeInterval) -> Void)?
+  var running = false
+
+  func start(onFrame: @escaping (TimeInterval) -> Void) {
+    self.onFrame = onFrame
+    running = true
+  }
+
+  func stop() { running = false }
+  func frame(_ time: TimeInterval) { onFrame?(time) }
+}
+
 // Not part of the pod (excluded in PerformanceKit.podspec). Run with ios/Tests/run.sh.
 final class MonitoringSessionTests: XCTestCase {
   private var tickers: [FakeTicker] = []
+  private var observers: [FakeFrameObserver] = []
+  private var clock: TimeInterval = 0
   private var footprint: UInt64? = 1000
   private lazy var collector = MemoryCollector(readFootprintBytes: { self.footprint }, now: Date.init)
 
   private func makeSession() -> MonitoringSession {
-    MonitoringSession(collector: collector, makeTicker: {
-      let ticker = FakeTicker()
-      self.tickers.append(ticker)
-      return ticker
-    })
+    MonitoringSession(
+      collector: collector,
+      makeTicker: {
+        let ticker = FakeTicker()
+        self.tickers.append(ticker)
+        return ticker
+      },
+      makeFrameObserver: {
+        let observer = FakeFrameObserver()
+        self.observers.append(observer)
+        return observer
+      },
+      now: { self.clock })
+  }
+
+  /// Delivers 60 Hz frames from `from` for one second and moves the clock to its end.
+  private func runFrames(_ observer: FakeFrameObserver, from: TimeInterval = 0) {
+    for i in 0...60 { observer.frame(from + Double(i) / 60) }
+    clock = from + 1
+  }
+
+  private func fps(_ session: MonitoringSession) throws -> Double? {
+    (try session.snapshot()["fps"] as? NSNumber)?.doubleValue
   }
 
   private func memory(_ session: MonitoringSession) throws -> UInt64? {
@@ -125,5 +158,58 @@ final class MonitoringSessionTests: XCTestCase {
     ticker.tick()
     footprint = 1234
     XCTAssertEqual(try memory(session), 1234)
+  }
+
+  func testFpsIsNilUntilTheWindowHasFrames() throws {
+    let session = makeSession()
+    try session.start(intervalMs: 500)
+    tickers[0].tick()
+    XCTAssertNil(try fps(session))
+  }
+
+  func testSampleReportsFpsFromObservedFrames() throws {
+    let session = makeSession()
+    try session.start(intervalMs: 500)
+    runFrames(observers[0])
+    tickers[0].tick()
+    XCTAssertEqual(try fps(session) ?? 0, 60, accuracy: 0.5)
+  }
+
+  func testSnapshotWhileStoppedHasNoFps() throws {
+    let session = makeSession()
+    try session.start(intervalMs: 500)
+    runFrames(observers[0])
+    tickers[0].tick()
+    session.stop()
+    XCTAssertNil(try fps(session))
+  }
+
+  func testStopAndRestartReleaseObserversAndClearFrames() throws {
+    let session = makeSession()
+    try session.start(intervalMs: 500)
+    runFrames(observers[0])
+    try session.start(intervalMs: 250)
+    XCTAssertEqual(observers.map(\.running), [false, true])
+    tickers[1].tick()
+    XCTAssertNil(try fps(session))
+    session.stop()
+    session.stop()
+    XCTAssertTrue(observers.allSatisfy { !$0.running })
+  }
+
+  func testRepeatedStartWithSameIntervalKeepsOneObserver() throws {
+    let session = makeSession()
+    try session.start(intervalMs: 500)
+    try session.start(intervalMs: 500)
+    XCTAssertEqual(observers.count, 1)
+  }
+
+  func testFramesStoppedForLongerThanTheWindowMakeFpsNil() throws {
+    let session = makeSession()
+    try session.start(intervalMs: 500)
+    runFrames(observers[0])
+    clock += 2
+    tickers[0].tick()
+    XCTAssertNil(try fps(session))
   }
 }

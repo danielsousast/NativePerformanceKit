@@ -9,7 +9,7 @@ mkdir -p "$bundle/Contents/MacOS"
 xcrun swiftc -module-name MemoryCollectorTests -emit-library -o "$bundle/Contents/MacOS/MemoryCollectorTests" \
   -Xlinker -bundle -parse-as-library -F "$platform/Library/Frameworks" -I "$platform/usr/lib" -L "$platform/usr/lib" \
   -Xlinker -rpath -Xlinker "$platform/Library/Frameworks" -Xlinker -rpath -Xlinker "$platform/usr/lib" \
-  -framework XCTest "$dir/../MemoryCollector.swift" "$dir/../MonitoringSession.swift" "$dir/MemoryCollectorTests.swift" "$dir/MonitoringSessionTests.swift"
+  -framework XCTest "$dir/../MemoryCollector.swift" "$dir/../MonitoringSession.swift" "$dir/../FpsCalculator.swift" "$dir/../FrameObserver.swift" "$dir/MemoryCollectorTests.swift" "$dir/FpsCalculatorTests.swift" "$dir/MonitoringSessionTests.swift"
 cat > "$bundle/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <plist version="1.0"><dict>

@@ -3,9 +3,9 @@
 _Updated: 2026-10-29_
 
 ## Current
-- Phase: 5 — FPS Collection
+- Phase: 6 — Public TypeScript API
 - In progress: none
-- Next: Implement Android frame observation.
+- Next: Implement the public API wrapper.
 
 ## Done
 - spec-driven init — 2026-10-29
@@ -14,11 +14,12 @@ _Updated: 2026-10-29_
 - Phase 2 — TurboModule Contract (all 7 tasks) — validated 2026-10-29
 - Phase 3 — Memory Collector (all 9 tasks) — validated 2026-10-29
 - Phase 4 — Monitoring Lifecycle (all 8 tasks) — validated 2026-10-29
+- Phase 5 — FPS Collection (all 7 tasks) — validated 2026-10-29
 
 ## Last validation
-- Task: Phase 4 — Monitoring Lifecycle
-- Verdict: PASS (independent subagent, all 8 items and both exit criteria)
-- Evidence: `yarn typecheck|lint|test` exit 0 (6 Jest tests); Android `testDebugUnitTest` 17/17 (12 MonitoringSession), `assembleDebug` OK; iOS `ios/Tests/run.sh` 13 XCTests 0 failures, `yarn build:ios` exit 0 (needed `pod install` to pick up the new Swift file); example `tsc`/`expo lint` exit 0. Not done: a runtime start/stop check on a device/simulator (example has no controls until Phase 7); the real `ExecutorTicker`/`DispatchTicker` are only reviewed, not unit-tested.
+- Task: Phase 5 — FPS Collection
+- Verdict: PASS (independent subagent, all items and exit criteria)
+- Evidence: `yarn typecheck|lint|test` exit 0 (6 Jest tests); Android `testDebugUnitTest` 33 tests (18 MonitoringSession, 10 FpsCalculator, 5 MemoryCollector), `assembleDebug` OK; iOS `ios/Tests/run.sh` 27 XCTests 0 failures, `yarn build:ios` exit 0; example `tsc`/`expo lint` exit 0. Not done: a device/simulator run during real animation and idle (item 7 is covered by unit tests with synthetic frame timestamps only; do it in Phase 7); Choreographer/CADisplayLink observers are reviewed, not unit-tested.
 
 ## Blockers / open questions
 - `.nvmrc` (template) pins Node v24.22.1; environment verified with v24.21.0.
@@ -31,6 +32,7 @@ _Updated: 2026-10-29_
 - A Metro dev server (`expo start`, port 8081) started for the runtime check may still be running; the `pkill` was denied. Stop it manually if needed.
 
 ## Decisions
+- 2026-10-29: FPS = observed display cadence over a 1 s sliding window, `(frames - 1) / span`; null when unmeasurable (see ARCHITECTURE). Frame observer lives in the shared session; an interval change restarts it (FPS null for ~0.5 s). Idle apps read about the refresh rate by design; README (Phase 10) must document this and the vsync power cost.
 - 2026-10-29: Existing spec.md and plan.md kept unchanged.
 - 2026-10-29: Library generated with create-react-native-library@0.64.0 (`turbo-module`, `kotlin-objc`, expo example, eslint, jest). `kotlin-swift` is only offered for Nitro; Swift collectors, if used, will be called from the ObjC++ module.
 - 2026-10-29: Per user, example app lives at repo root (`example/`), library under `packages/`; root is a Yarn 4 workspace (`packages/*`, `example`) with forwarding scripts. Example tsconfig/babel/autolinking point at `../packages/react-native-performance-kit`.

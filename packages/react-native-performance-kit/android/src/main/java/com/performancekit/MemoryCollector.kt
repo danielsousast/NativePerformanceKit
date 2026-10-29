@@ -4,7 +4,8 @@ import android.os.Debug
 
 class MemoryUnavailableException(message: String) : Exception(message)
 
-data class MemorySnapshot(val timestampMs: Long, val memoryUsageBytes: Long)
+/** [fps] is left null by [MemoryCollector]; the monitoring session fills it from the frame observer. */
+data class MemorySnapshot(val timestampMs: Long, val memoryUsageBytes: Long, val fps: Double? = null)
 
 /**
  * Reads process memory as total PSS (Proportional Set Size) in bytes: the "TOTAL PSS" figure of
