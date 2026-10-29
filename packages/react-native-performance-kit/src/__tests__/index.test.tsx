@@ -1,14 +1,23 @@
 import { expect, it, jest } from '@jest/globals';
 import type { NativeSnapshot } from '../NativePerformanceKit';
 import type { PerformanceSnapshot } from '../types';
-import { getSnapshot, isMonitoring } from '../index';
+import {
+  getSnapshot,
+  isMonitoring,
+  startMonitoring,
+  stopMonitoring,
+} from '../index';
 
 const mockIsMonitoring = jest.fn<() => boolean>();
+const mockStart = jest.fn<(intervalMs: number) => Promise<void>>();
+const mockStop = jest.fn<() => Promise<void>>();
 const mockGetSnapshot = jest.fn<() => Promise<NativeSnapshot>>();
 
 jest.mock('../NativePerformanceKit', () => ({
   __esModule: true,
   default: {
+    startMonitoring: (intervalMs: number) => mockStart(intervalMs),
+    stopMonitoring: () => mockStop(),
     isMonitoring: () => mockIsMonitoring(),
     getSnapshot: () => mockGetSnapshot(),
   },
@@ -39,4 +48,25 @@ it('returns the native snapshot unchanged, keeping a null fps', async () => {
 it('propagates native measurement failures', async () => {
   mockGetSnapshot.mockRejectedValue(new Error('E_MEMORY_UNAVAILABLE'));
   await expect(getSnapshot()).rejects.toThrow('E_MEMORY_UNAVAILABLE');
+});
+
+it('starts monitoring with the 1000 ms default or the given interval', async () => {
+  mockStart.mockResolvedValue(undefined);
+  await startMonitoring();
+  expect(mockStart).toHaveBeenLastCalledWith(1000);
+  await startMonitoring({ intervalMs: 250 });
+  expect(mockStart).toHaveBeenLastCalledWith(250);
+});
+
+it('propagates a native interval rejection', async () => {
+  mockStart.mockRejectedValue(new Error('E_INVALID_INTERVAL'));
+  await expect(startMonitoring({ intervalMs: 1 })).rejects.toThrow(
+    'E_INVALID_INTERVAL'
+  );
+});
+
+it('stops monitoring through the native module', async () => {
+  mockStop.mockResolvedValue(undefined);
+  await expect(stopMonitoring()).resolves.toBeUndefined();
+  expect(mockStop).toHaveBeenCalledTimes(1);
 });

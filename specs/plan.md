@@ -81,14 +81,14 @@ Memory measurements work on both platforms and their semantics are documented.
 
 ### Tasks
 
-- [ ] Implement startMonitoring.
-- [ ] Implement stopMonitoring.
-- [ ] Implement isMonitoring.
-- [ ] Validate sampling intervals.
-- [ ] Prevent duplicate collectors.
-- [ ] Handle repeated start and stop calls.
-- [ ] Release resources on module invalidation.
-- [ ] Test cleanup after errors.
+- [x] Implement startMonitoring.
+- [x] Implement stopMonitoring.
+- [x] Implement isMonitoring.
+- [x] Validate sampling intervals.
+- [x] Prevent duplicate collectors.
+- [x] Handle repeated start and stop calls.
+- [x] Release resources on module invalidation.
+- [x] Test cleanup after errors.
 
 ### Deliverables
 

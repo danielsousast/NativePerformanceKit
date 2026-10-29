@@ -1,5 +1,5 @@
 #import <PerformanceKitSpec/PerformanceKitSpec.h>
 
-@interface PerformanceKit : NSObject <NativePerformanceKitSpec>
+@interface PerformanceKit : NSObject <NativePerformanceKitSpec, RCTInvalidating>
 
 @end

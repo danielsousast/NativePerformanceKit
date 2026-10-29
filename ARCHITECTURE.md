@@ -6,7 +6,7 @@ _Updated: 2026-10-29_
 
 NativePerformanceKit is a React Native library (Turbo Native Module + Codegen) exposing process memory and FPS snapshots with a start/stop monitoring lifecycle. See `specs/spec.md` (WHAT) and `specs/plan.md` (HOW).
 
-**Current reality:** Phase 3. `getSnapshot()` returns a real memory snapshot on both platforms (`fps` null); `isMonitoring()` returns false; `startMonitoring`/`stopMonitoring` reject with `E_UNIMPLEMENTED` until Phase 4. The example shows the memory snapshot. Everything marked `(planned)` is not built.
+**Current reality:** Phase 4. The start/stop/isMonitoring lifecycle works on both platforms through one shared native `MonitoringSession`; `getSnapshot()` returns memory (`fps` null until Phase 5). The example shows a memory snapshot but has no start/stop controls yet. Everything marked `(planned)` is not built.
 
 ## Directory map
 
@@ -42,7 +42,7 @@ NativePerformanceKit/
 Built:
 - Memory collectors: Android `MemoryCollector` reports total PSS (KB to bytes, `Long`); iOS `PKMemoryCollector` reports `phys_footprint` (bytes). Timestamp = Unix epoch ms. Unavailable/non-positive reads throw and the module rejects `E_MEMORY_UNAVAILABLE`. Readers and clock are injected for tests. `getSnapshot` is exported from `src/index.tsx` as a pass-through.
 - TurboModule spec (`src/NativePerformanceKit.ts`): `startMonitoring(intervalMs)`, `stopMonitoring()`, `isMonitoring()`, `getSnapshot(): Promise<NativeSnapshot>` with `fps: number | null` (Codegen accepts the nullable). A compile-time check in `src/__tests__/index.test.tsx` keeps `NativeSnapshot` assignable to the public `PerformanceSnapshot`.
-- Android/iOS stubs: `isMonitoring` returns false; start/stop/getSnapshot reject `E_UNIMPLEMENTED`.
+- Monitoring session (Android `MonitoringSession.kt`, iOS `MonitoringSession.swift` / `PKMonitoringSession`): one per module. `start(intervalMs)` validates (finite, >= 100 ms, else `E_INVALID_INTERVAL`, running session untouched); a running session with the same interval is a no-op, a different interval replaces the single ticker; `stop()` is idempotent. One background ticker (daemon single-thread executor / utility `DispatchSourceTimer`) samples memory and keeps only the latest sample; ticks that race with stop/restart are discarded; a failed read clears the cached sample (snapshot then reports the failure) without stopping the session. `getSnapshot` returns the latest sample while monitoring, else a fresh read. Module invalidation stops the session (Android `invalidate()`, iOS `RCTInvalidating`). The `Ticker` seam is faked in tests.
 - iOS registration: works at runtime with the template as-is (verified on simulator) despite the empty `moduleMapping`.
 
 Template baseline:
@@ -52,9 +52,9 @@ Template baseline:
 - Example: Expo dev-build app resolving the library from source through the `react-native-performance-kit-source` export condition.
 
 Planned (per spec section 7):
-- TypeScript layer (planned): remaining public API (`startMonitoring`, `stopMonitoring`, `getSnapshot`), validation, error normalization, optional hook.
-- Android collectors (planned): Choreographer FPS and the shared session (memory collector is built).
-- iOS collectors (planned): CADisplayLink FPS and the shared session (memory collector is built).
+- TypeScript layer (planned): validation, error normalization, optional hook (thin `startMonitoring` (default 1000 ms), `stopMonitoring`, `getSnapshot`, `isMonitoring` pass-throughs exist).
+- Android collectors (planned): Choreographer FPS (the shared session is built; it will own the frame observer).
+- iOS collectors (planned): CADisplayLink FPS (the shared session is built; it will own the frame observer).
 
 ## Data / control flow (planned)
 

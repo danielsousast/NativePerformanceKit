@@ -7,41 +7,47 @@
 #endif
 
 @implementation PerformanceKit {
-  PKMemoryCollector *_memoryCollector;
+  PKMonitoringSession *_session;
 }
 
 - (instancetype)init
 {
   if (self = [super init]) {
-    _memoryCollector = [PKMemoryCollector new];
+    _session = [PKMonitoringSession new];
   }
   return self;
 }
 
-// Lifecycle and FPS arrive in phases 4-5; getSnapshot reports memory on demand.
 - (void)startMonitoring:(double)intervalMs
                 resolve:(RCTPromiseResolveBlock)resolve
                  reject:(RCTPromiseRejectBlock)reject
 {
-  [self rejectUnimplemented:reject];
+  NSError *error = nil;
+  if ([_session startWithIntervalMs:intervalMs error:&error]) {
+    resolve(nil);
+  } else {
+    reject(@"E_INVALID_INTERVAL", error.localizedDescription, error);
+  }
 }
 
 - (void)stopMonitoring:(RCTPromiseResolveBlock)resolve
                 reject:(RCTPromiseRejectBlock)reject
 {
-  [self rejectUnimplemented:reject];
+  [_session stop];
+  resolve(nil);
 }
 
 - (NSNumber *)isMonitoring
 {
-  return @NO;
+  return @(_session.isMonitoring);
 }
 
+// FPS arrives in Phase 5; the snapshot carries memory only.
 - (void)getSnapshot:(RCTPromiseResolveBlock)resolve
              reject:(RCTPromiseRejectBlock)reject
 {
   NSError *error = nil;
-  NSDictionary *snapshot = [_memoryCollector snapshotAndReturnError:&error];
+  NSDictionary *snapshot = [_session snapshotAndReturnError:&error];
   if (snapshot) {
     resolve(snapshot);
   } else {
@@ -49,9 +55,9 @@
   }
 }
 
-- (void)rejectUnimplemented:(RCTPromiseRejectBlock)reject
+- (void)invalidate
 {
-  reject(@"E_UNIMPLEMENTED", @"Not implemented yet", nil);
+  [_session stop];
 }
 
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:

@@ -7,18 +7,28 @@ import com.facebook.react.bridge.ReactApplicationContext
 class PerformanceKitModule(reactContext: ReactApplicationContext) :
   NativePerformanceKitSpec(reactContext) {
 
-  private val memoryCollector = MemoryCollector()
+  private val session = MonitoringSession(MemoryCollector())
 
-  // Lifecycle and FPS arrive in phases 4-5; getSnapshot reports memory on demand.
-  override fun startMonitoring(intervalMs: Double, promise: Promise) = rejectUnimplemented(promise)
+  override fun startMonitoring(intervalMs: Double, promise: Promise) {
+    try {
+      session.start(intervalMs)
+      promise.resolve(null)
+    } catch (e: IllegalArgumentException) {
+      promise.reject("E_INVALID_INTERVAL", e.message, e)
+    }
+  }
 
-  override fun stopMonitoring(promise: Promise) = rejectUnimplemented(promise)
+  override fun stopMonitoring(promise: Promise) {
+    session.stop()
+    promise.resolve(null)
+  }
 
-  override fun isMonitoring(): Boolean = false
+  override fun isMonitoring(): Boolean = session.isMonitoring()
 
+  // FPS arrives in Phase 5; the snapshot carries memory only.
   override fun getSnapshot(promise: Promise) {
     try {
-      val snapshot = memoryCollector.snapshot()
+      val snapshot = session.snapshot()
       promise.resolve(
         Arguments.createMap().apply {
           putDouble("timestamp", snapshot.timestampMs.toDouble())
@@ -31,8 +41,9 @@ class PerformanceKitModule(reactContext: ReactApplicationContext) :
     }
   }
 
-  private fun rejectUnimplemented(promise: Promise) {
-    promise.reject("E_UNIMPLEMENTED", "Not implemented yet")
+  override fun invalidate() {
+    session.stop()
+    super.invalidate()
   }
 
   companion object {
