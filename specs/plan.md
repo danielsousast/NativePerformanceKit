@@ -13,13 +13,13 @@
 
 ### Tasks
 
-- [ ] Inspect the generated library template.
-- [ ] Confirm the React Native and Codegen versions.
-- [ ] Confirm Android and iOS support.
-- [ ] Identify the generated native base classes and registration mechanisms.
-- [ ] Build the untouched example application.
-- [ ] Run the existing test suite.
-- [ ] Document the development environment.
+- [x] Inspect the generated library template.
+- [x] Confirm the React Native and Codegen versions.
+- [x] Confirm Android and iOS support.
+- [x] Identify the generated native base classes and registration mechanisms.
+- [x] Build the untouched example application.
+- [x] Run the existing test suite.
+- [x] Document the development environment.
 
 ### Deliverables
 

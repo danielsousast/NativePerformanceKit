@@ -64,7 +64,7 @@ JS API -> TurboModule -> single shared native session (memory sampler + frame ob
 
 ## Versions (verified 2026-10-29)
 
-React Native 0.88.1, @react-native/codegen 0.88.1, Expo SDK 58, React 19.3.0, TypeScript 6.0, Yarn 4.18.1. Android: library minSdk 24 / compileSdk 36, Kotlin (RN 0.88 toolchain), JDK 17. iOS: RN minimum 15.1, example deployment target 16.4, Xcode 26.6. Node 24.
+React Native 0.88.1, @react-native/codegen 0.88.1, Expo SDK 58, React 19.3.0, TypeScript 6.0, Yarn 4.18.1. Android: library minSdk 24 / default compileSdk 36 (host app ext overrides), Kotlin (RN 0.88 toolchain), JDK 17. iOS: RN minimum 15.1, example deployment target 16.4, Xcode 26.6. Node 24.
 
 ## Build / test commands
 
