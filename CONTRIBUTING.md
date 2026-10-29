@@ -59,12 +59,6 @@ To run the example app on iOS:
 yarn example ios
 ```
 
-To run the example app on Web:
-
-```sh
-yarn example web
-```
-
 Make sure your code passes TypeScript:
 
 ```sh
@@ -89,6 +83,7 @@ Remember to add tests for your change if possible. Run the unit tests by:
 yarn test
 ```
 
+CI (`.github/workflows/ci.yml`) runs lint, typecheck, Jest, package verification, Android unit tests plus an example build, and iOS XCTests plus an example build (prebuild exercises Codegen and autolinking) on every pull request.
 
 
 ### Scripts
@@ -96,14 +91,15 @@ yarn test
 The `package.json` file contains various scripts for common tasks:
 
 - `yarn`: setup project by installing dependencies.
-- `yarn typecheck`: type-check files with TypeScript.
-- `yarn lint`: lint files with [ESLint](https://eslint.org/).
-- `yarn test`: run unit tests with [Jest](https://jestjs.io/).
+- `yarn typecheck`: type-check the library and the example app with TypeScript.
+- `yarn lint`: lint the library ([ESLint](https://eslint.org/)) and the example app (`expo lint`).
+- `yarn test`: run TypeScript unit tests with [Jest](https://jestjs.io/).
+- `yarn test:android`: run the Android JUnit tests (needs `yarn workspace react-native-performance-kit-example expo prebuild --platform android` once, and JDK 17).
+- `yarn test:ios`: run the iOS XCTests on the macOS host (needs Xcode; no prebuild).
+- `yarn verify:package`: build, pack and install the library into an empty project, check the shipped files and typecheck a consumer.
 - `yarn example start`: start the Metro server for the example app.
 - `yarn example android`: run the example app on Android.
 - `yarn example ios`: run the example app on iOS.
-- `yarn example web`: run the example app on Web.
-- `yarn example build:web`: build the example app for Web.
 
 ### Sending a pull request
 

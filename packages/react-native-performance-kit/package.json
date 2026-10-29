@@ -25,6 +25,8 @@
     "!android/gradle",
     "!android/gradlew",
     "!android/gradlew.bat",
+    "!android/src/test",
+    "!ios/Tests",
     "!android/local.properties",
     "!**/__tests__",
     "!**/__fixtures__",
@@ -77,7 +79,6 @@
     "react-native": "0.88.1",
     "react-native-builder-bob": "^0.44.1",
     "react-test-renderer": "19.3.0",
-    "turbo": "^2.11.10",
     "typescript": "^6.0.3"
   },
   "peerDependencies": {

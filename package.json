@@ -6,10 +6,13 @@
   ],
   "scripts": {
     "example": "npm run workspace react-native-performance-kit-example",
-    "typecheck": "yarn workspace react-native-performance-kit typecheck",
-    "lint": "yarn workspace react-native-performance-kit lint",
+    "typecheck": "yarn workspace react-native-performance-kit typecheck && yarn workspace react-native-performance-kit-example tsc --noEmit",
+    "lint": "yarn workspace react-native-performance-kit lint && yarn workspace react-native-performance-kit-example lint",
     "test": "yarn workspace react-native-performance-kit test",
-    "prepare": "yarn workspace react-native-performance-kit prepare"
+    "prepare": "yarn workspace react-native-performance-kit prepare",
+    "test:android": "cd example/android && ./gradlew :react-native-performance-kit:testDebugUnitTest",
+    "test:ios": "sh packages/react-native-performance-kit/ios/Tests/run.sh",
+    "verify:package": "sh scripts/verify-package.sh"
   },
   "packageManager": "yarn@4.18.1"
 }

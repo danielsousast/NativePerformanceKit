@@ -6,7 +6,7 @@ _Updated: 2026-10-29_
 
 NativePerformanceKit is a React Native library (Turbo Native Module + Codegen) exposing process memory and FPS snapshots with a start/stop monitoring lifecycle. See `specs/spec.md` (WHAT) and `specs/plan.md` (HOW).
 
-**Current reality:** Phase 7. The start/stop/isMonitoring lifecycle works on both platforms through one shared native `MonitoringSession`; `getSnapshot()` returns memory and FPS (`fps` null when unavailable). The example is a dashboard with start/stop, memory/FPS, bounded history and errors, and memory-pressure and frame-load scenarios (device validation pending). Everything marked `(planned)` is not built.
+**Current reality:** Phase 10 docs written (publishing deferred); Phase 8 CI is configured (not yet run on GitHub); Phase 9 benchmarks are not finished. The start/stop/isMonitoring lifecycle works on both platforms through one shared native `MonitoringSession`; `getSnapshot()` returns memory and FPS (`fps` null when unavailable). The example is a dashboard with start/stop, memory/FPS, bounded history and errors, and memory-pressure and frame-load scenarios (device validation pending). Everything marked `(planned)` is not built.
 
 ## Directory map
 
@@ -15,10 +15,14 @@ NativePerformanceKit/
 ├── package.json                   private Yarn 4 workspace root (packages/*, example); forwards scripts
 ├── .yarnrc.yml, .yarn/releases/   Yarn 4.18.1, nodeLinker node-modules, nmHoistingLimits workspaces
 ├── .nvmrc, .editorconfig, .gitignore, .gitattributes, .watchmanconfig
+├── README.md                      pointer to the library README, example and docs
 ├── CONTRIBUTING.md                development environment and workflow
+├── .github/workflows/ci.yml       CI: lint, test, package, android, ios; .github/actions/setup (Node + yarn cache)
+├── scripts/verify-package.sh      pack, clean install, shipped-files and consumer typecheck
 ├── specs/spec.md, specs/plan.md   requirements and phased plan
 ├── ARCHITECTURE.md, STATE.md      this file / progress tracker
 ├── packages/react-native-performance-kit/   the library (npm: react-native-performance-kit)
+│   ├── README.md, CHANGELOG.md, LICENSE   public docs (English), shipped in the npm package
 │   ├── package.json               codegenConfig, bob targets, jest preset, eslint
 │   ├── src/NativePerformanceKit.ts   Codegen spec (TurboModule `Spec`, name "PerformanceKit")
 │   ├── src/types.ts, api.ts, errors.ts, usePerformanceMonitor.ts, index.tsx   public types, wrapper, errors, hook; index is the only public entry
@@ -27,7 +31,6 @@ NativePerformanceKit/
 │   ├── ios/PerformanceKit.h/.mm   Objective-C++ module conforming to generated NativePerformanceKitSpec
 │   ├── ios/MemoryCollector.swift  Swift collector (PKMemoryCollector); also MonitoringSession, FpsCalculator, FrameObserver (.swift); ios/Tests/ XCTests via run.sh (excluded from the pod)
 │   ├── PerformanceKit.podspec     install_modules_dependencies, min iOS from RN
-│   ├── .github/, turbo.json       template CI (not active at this path; Phase 8)
 └── example/                       Expo app, development build (expo ~58)
     ├── src/App.tsx, FrameLoad.tsx, scenarios.ts   dashboard on usePerformanceMonitor; bounded history/error log; memory-pressure and UI-load scenarios
     ├── metro.config.js            react-native-monorepo-config, root = repo root, source condition
@@ -54,9 +57,9 @@ Template baseline:
 - Example: Expo dev-build app resolving the library from source through the `react-native-performance-kit-source` export condition.
 
 Planned (per spec section 7):
-- Nothing left in the TS layer; remaining work is the example app, CI, benchmarks and docs.
+- Nothing left in the TS layer; remaining work is benchmarks and docs.
 
-## Data / control flow (planned)
+## Data / control flow
 
 JS API -> TurboModule -> single shared native session (memory sampler + frame observer) -> snapshot `{timestamp, memoryUsageBytes, fps|null}` returned to JS. Stop/invalidate releases timers and frame callbacks.
 
@@ -76,7 +79,9 @@ React Native 0.88.1, @react-native/codegen 0.88.1, Expo SDK 58, React 19.3.0, Ty
 
 From the repo root (needs `corepack enable`):
 - `yarn` (install), `yarn typecheck`, `yarn lint`, `yarn test`, `yarn prepare` (bob build to `packages/react-native-performance-kit/lib`).
+- `yarn test:android` (JUnit through the example's Gradle; needs `expo prebuild --platform android` once), `yarn test:ios` (XCTests on the macOS host), `yarn verify:package`.
 - `yarn example ios|android|start`.
+- `yarn lint` and `yarn typecheck` cover the library and the example.
 
 From `example/`:
 - `npx tsc --noEmit`, `npx expo lint`, `npx expo-doctor`.

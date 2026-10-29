@@ -172,14 +172,14 @@ The example demonstrates normal operation and makes metric limitations visible.
 
 ### Tasks
 
-- [ ] Add TypeScript tests.
-- [ ] Add Android unit tests.
-- [ ] Add iOS tests where supported by the template.
-- [ ] Add integration checks.
-- [ ] Configure lint and type checking.
-- [ ] Configure Android CI.
-- [ ] Configure iOS CI on macOS.
-- [ ] Verify clean installation from the package.
+- [x] Add TypeScript tests.
+- [x] Add Android unit tests.
+- [x] Add iOS tests where supported by the template.
+- [x] Add integration checks.
+- [x] Configure lint and type checking.
+- [x] Configure Android CI.
+- [x] Configure iOS CI on macOS.
+- [x] Verify clean installation from the package.
 
 ### Deliverables
 
@@ -218,14 +218,14 @@ The SDK's overhead is measured and transparently documented.
 
 ### Tasks
 
-- [ ] Write the README in English.
-- [ ] Document installation and supported versions.
-- [ ] Document metrics and their limitations.
-- [ ] Add architecture documentation.
-- [ ] Add contributing instructions.
-- [ ] Add license and changelog.
-- [ ] Inspect the npm package contents.
-- [ ] Test package installation in a clean example.
+- [x] Write the README in English.
+- [x] Document installation and supported versions.
+- [x] Document metrics and their limitations.
+- [x] Add architecture documentation.
+- [x] Add contributing instructions.
+- [x] Add license and changelog.
+- [x] Inspect the npm package contents.
+- [x] Test package installation in a clean example.
 - [ ] Publish version 0.1.0 only after all acceptance criteria pass.
 
 ### Deliverables

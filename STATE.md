@@ -3,9 +3,9 @@
 _Updated: 2026-10-29_
 
 ## Current
-- Phase: 7 — Example Application
+- Phase: 8 — Automated Testing and CI
 - In progress: none
-- Next: Validate on physical devices (Phase 7, last task; needs hardware).
+- Next: Phase 9 — Performance Validation (Phase 7 physical-device validation still open; needs hardware).
 
 ## Done
 - spec-driven init — 2026-10-29
@@ -16,22 +16,26 @@ _Updated: 2026-10-29_
 - Phase 4 — Monitoring Lifecycle (all 8 tasks) — validated 2026-10-29
 - Phase 5 — FPS Collection (all 7 tasks) — validated 2026-10-29
 - Phase 6 — Public TypeScript API (all 8 tasks) — validated 2026-10-29
+- Phase 10 — Documentation and Release (8 of 9 tasks; publish deferred) — validated 2026-10-29
 - Phase 7 — Example Application (7 of 8 tasks; physical-device validation open) — validated 2026-10-29
+- Phase 8 — Automated Testing and CI (all 8 tasks) — validated 2026-10-29
 
 ## Last validation
-- Task: Phase 7 — dashboard, memory/FPS display, start/stop, timestamps/errors, bounded history, memory-pressure and frame-drop scenarios
-- Verdict: PASS (independent subagent, items 1-7)
-- Evidence: example `tsc --noEmit` and `expo lint` clean; `yarn typecheck|lint|test` exit 0 (19 tests); `expo export --platform ios` bundles. Not run on a simulator/device by the validator. Non-blocking: history rows keyed by timestamp; last values stay visible after Stop.
+- Task: Phase 8 — tests, lint/typecheck, Android and iOS CI, clean package install
+- Verdict: PASS (independent subagent)
+- Evidence: `yarn lint`, `yarn typecheck`, `yarn test` (19 tests), `yarn test:android` (JUnit, rerun-tasks), `yarn test:ios` (27 XCTests), `yarn verify:package` all exit 0. Not run: GitHub Actions itself, `expo prebuild` on iOS, `build:ios`, fresh Android prebuild/`assembleDebug`, any simulator/device run. The workflow is validated by reasoning only; first real run is the first PR/push.
 
 ## Blockers / open questions
+- Before publishing: replace placeholder author/repository/bugs/homepage URLs in the library package.json; README relative links to ARCHITECTURE/CONTRIBUTING break on npm until the real repo URL is set. README states device validation and overhead measurements are not done (Phases 7/9).
 - Phase 7 "Validate on physical devices" and the screenshots/video deliverable need real hardware; unchecked in plan.md.
 - `.nvmrc` (template) pins Node v24.22.1; environment verified with v24.21.0.
 - Library `package.json` author URL and repository URL are placeholders (`https://github.com/`, `github.com/example/react-native-performance-kit`); README links point to the repo-root CONTRIBUTING/CODE_OF_CONDUCT via relative paths, which break on npm until the real repo URL is set.
-- Template CI (`packages/react-native-performance-kit/.github`, `turbo.json`) uses library-relative `example/` paths and is inactive at that location: Phase 8.
+- CI (`.github/workflows/ci.yml`) has never run on GitHub; `macos-latest` must provide Xcode 26 and `ubuntu-latest` `$ANDROID_HOME/cmdline-tools/latest`. No coverage threshold is enforced.
+- Spec section 9 integration items "example application execution" and "device-level validation" are not automated (need a device/simulator). Real `CADisplayLink`/`Choreographer` wrappers are only tested through fake observers; no Android test for cleanup on module invalidation.
 
 - Android `Debug.getMemoryInfo` now runs on the sampler thread while monitoring; a stopped `getSnapshot` still reads on the module thread.
 - `start()` after module invalidation is not blocked (low risk); minimum interval 100 ms is enforced in both the TS wrapper and natively.
-- iOS XCTests run via `ios/Tests/run.sh` (macOS host, outside the pod); a real test target is left to Phase 8.
+- iOS XCTests run via `ios/Tests/run.sh` (macOS host, outside the pod); kept as the iOS test mechanism (no Xcode test target).
 - A Metro dev server (`expo start`, port 8081) started for the runtime check may still be running; the `pkill` was denied. Stop it manually if needed.
 
 ## Decisions
@@ -47,3 +51,4 @@ _Updated: 2026-10-29_
 - 2026-10-29: Added a thin `getSnapshot()` export to `src/index.tsx` (pass-through) so the example can exercise native; validation/normalization remains Phase 6.
 - 2026-10-29: Lifecycle semantics: start with same interval = no-op, different interval = replace the single ticker, invalid interval rejects `E_INVALID_INTERVAL` and leaves a running session alone, stop when stopped = no-op. While monitoring `getSnapshot` returns the latest sample; failed sample clears it. Added thin TS `startMonitoring`/`stopMonitoring` pass-throughs (default 1000 ms).
 - 2026-10-29: TS layer split into `api.ts` (validation, normalization), `errors.ts` (`PerformanceKitError`, codes `E_INVALID_INTERVAL|E_MEMORY_UNAVAILABLE|E_UNKNOWN`), `usePerformanceMonitor.ts`. Hook ref-counts enabled hooks so the shared session stops only when the last unmounts; it polls `getSnapshot` per interval. Added dev deps `react-test-renderer@19.3.0` + types for hook tests (deprecated in React 19 but working).
+- 2026-10-29: CI moved to the repo root and simplified: jobs lint, test, package, android (prebuild, JUnit via example Gradle, assembleDebug), ios (XCTests, prebuild, xcodebuild). Dropped turbo (`turbo.json`, devDependency) and the web build: Android/iOS only. Root `lint`/`typecheck` also cover the example. `scripts/verify-package.sh` packs, installs into an empty project, checks shipped files and typechecks a consumer; `android/src/test` and `ios/Tests` excluded from the npm package.
