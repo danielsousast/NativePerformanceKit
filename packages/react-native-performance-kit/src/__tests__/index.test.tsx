@@ -2,6 +2,7 @@ import { expect, it, jest } from '@jest/globals';
 import type { NativeSnapshot } from '../NativePerformanceKit';
 import type { PerformanceSnapshot } from '../types';
 import {
+  PerformanceKitError,
   getSnapshot,
   isMonitoring,
   startMonitoring,
@@ -35,7 +36,7 @@ it('delegates isMonitoring to the native module', () => {
   expect(isMonitoring()).toBe(true);
 });
 
-it('returns the native snapshot unchanged, keeping a null fps', async () => {
+it('returns the native snapshot, keeping a null fps', async () => {
   const snapshot = {
     timestamp: 1_700_000_000_123,
     memoryUsageBytes: 2048,
@@ -45,9 +46,32 @@ it('returns the native snapshot unchanged, keeping a null fps', async () => {
   await expect(getSnapshot()).resolves.toEqual(snapshot);
 });
 
-it('propagates native measurement failures', async () => {
-  mockGetSnapshot.mockRejectedValue(new Error('E_MEMORY_UNAVAILABLE'));
-  await expect(getSnapshot()).rejects.toThrow('E_MEMORY_UNAVAILABLE');
+it('maps a non-finite native fps to null', async () => {
+  mockGetSnapshot.mockResolvedValue({
+    timestamp: 1,
+    memoryUsageBytes: 1,
+    fps: Number.NaN,
+  });
+  await expect(getSnapshot()).resolves.toMatchObject({ fps: null });
+});
+
+it('normalizes native errors to PerformanceKitError with a code', async () => {
+  mockGetSnapshot.mockRejectedValue(
+    Object.assign(new Error('no memory'), { code: 'E_MEMORY_UNAVAILABLE' })
+  );
+  const error = await getSnapshot().catch((e: unknown) => e);
+  expect(error).toBeInstanceOf(PerformanceKitError);
+  expect(error).toMatchObject({
+    code: 'E_MEMORY_UNAVAILABLE',
+    message: 'no memory',
+  });
+
+  mockGetSnapshot.mockRejectedValue(new Error('boom'));
+  await expect(getSnapshot()).rejects.toMatchObject({
+    name: 'PerformanceKitError',
+    code: 'E_UNKNOWN',
+    message: 'boom',
+  });
 });
 
 it('starts monitoring with the 1000 ms default or the given interval', async () => {
@@ -58,11 +82,29 @@ it('starts monitoring with the 1000 ms default or the given interval', async () 
   expect(mockStart).toHaveBeenLastCalledWith(250);
 });
 
-it('propagates a native interval rejection', async () => {
-  mockStart.mockRejectedValue(new Error('E_INVALID_INTERVAL'));
-  await expect(startMonitoring({ intervalMs: 1 })).rejects.toThrow(
-    'E_INVALID_INTERVAL'
+it.each([99, 0, -5, Number.NaN, Number.POSITIVE_INFINITY])(
+  'rejects interval %p without calling native',
+  async (intervalMs) => {
+    mockStart.mockClear();
+    await expect(startMonitoring({ intervalMs })).rejects.toMatchObject({
+      code: 'E_INVALID_INTERVAL',
+    });
+    expect(mockStart).not.toHaveBeenCalled();
+  }
+);
+
+it('accepts the 100 ms minimum', async () => {
+  mockStart.mockResolvedValue(undefined);
+  await expect(startMonitoring({ intervalMs: 100 })).resolves.toBeUndefined();
+});
+
+it('normalizes a native interval rejection', async () => {
+  mockStart.mockRejectedValue(
+    Object.assign(new Error('bad'), { code: 'E_INVALID_INTERVAL' })
   );
+  await expect(startMonitoring({ intervalMs: 500 })).rejects.toMatchObject({
+    code: 'E_INVALID_INTERVAL',
+  });
 });
 
 it('stops monitoring through the native module', async () => {

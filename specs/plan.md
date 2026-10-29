@@ -126,14 +126,14 @@ FPS is meaningful under the documented conditions and unavailable values are han
 
 ### Tasks
 
-- [ ] Implement the public API wrapper.
-- [ ] Validate input configuration.
-- [ ] Normalize errors.
-- [ ] Export public types.
-- [ ] Add a React hook if needed.
-- [ ] Ensure hook cleanup is safe.
-- [ ] Test disabled monitoring and unmount behavior.
-- [ ] Document usage examples.
+- [x] Implement the public API wrapper.
+- [x] Validate input configuration.
+- [x] Normalize errors.
+- [x] Export public types.
+- [x] Add a React hook if needed.
+- [x] Ensure hook cleanup is safe.
+- [x] Test disabled monitoring and unmount behavior.
+- [x] Document usage examples.
 
 ### Deliverables
 

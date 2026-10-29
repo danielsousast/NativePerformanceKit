@@ -3,9 +3,9 @@
 _Updated: 2026-10-29_
 
 ## Current
-- Phase: 6 — Public TypeScript API
+- Phase: 7 — Example Application
 - In progress: none
-- Next: Implement the public API wrapper.
+- Next: Build a monitoring dashboard.
 
 ## Done
 - spec-driven init — 2026-10-29
@@ -15,11 +15,12 @@ _Updated: 2026-10-29_
 - Phase 3 — Memory Collector (all 9 tasks) — validated 2026-10-29
 - Phase 4 — Monitoring Lifecycle (all 8 tasks) — validated 2026-10-29
 - Phase 5 — FPS Collection (all 7 tasks) — validated 2026-10-29
+- Phase 6 — Public TypeScript API (all 8 tasks) — validated 2026-10-29
 
 ## Last validation
-- Task: Phase 5 — FPS Collection
-- Verdict: PASS (independent subagent, all items and exit criteria)
-- Evidence: `yarn typecheck|lint|test` exit 0 (6 Jest tests); Android `testDebugUnitTest` 33 tests (18 MonitoringSession, 10 FpsCalculator, 5 MemoryCollector), `assembleDebug` OK; iOS `ios/Tests/run.sh` 27 XCTests 0 failures, `yarn build:ios` exit 0; example `tsc`/`expo lint` exit 0. Not done: a device/simulator run during real animation and idle (item 7 is covered by unit tests with synthetic frame timestamps only; do it in Phase 7); Choreographer/CADisplayLink observers are reviewed, not unit-tested.
+- Task: Phase 6 — Public TypeScript API
+- Verdict: PASS (independent subagent, all 8 tasks and exit criterion)
+- Evidence: `yarn typecheck|lint|test` exit 0 (19 Jest tests, 2 suites); example `tsc`/`expo lint` exit 0. Non-blocking: an `intervalMs` change in the hook fires stop then start (activeHooks hits 0 between cleanup and effect); no hook test for an invalid interval or an interval change; the last hook unmounting also stops a session started manually.
 
 ## Blockers / open questions
 - `.nvmrc` (template) pins Node v24.22.1; environment verified with v24.21.0.
@@ -27,7 +28,7 @@ _Updated: 2026-10-29_
 - Template CI (`packages/react-native-performance-kit/.github`, `turbo.json`) uses library-relative `example/` paths and is inactive at that location: Phase 8.
 
 - Android `Debug.getMemoryInfo` now runs on the sampler thread while monitoring; a stopped `getSnapshot` still reads on the module thread.
-- `start()` after module invalidation is not blocked (low risk); minimum interval 100 ms is enforced natively only, TS validation is Phase 6.
+- `start()` after module invalidation is not blocked (low risk); minimum interval 100 ms is enforced in both the TS wrapper and natively.
 - iOS XCTests run via `ios/Tests/run.sh` (macOS host, outside the pod); a real test target is left to Phase 8.
 - A Metro dev server (`expo start`, port 8081) started for the runtime check may still be running; the `pkill` was denied. Stop it manually if needed.
 
@@ -42,3 +43,4 @@ _Updated: 2026-10-29_
 - 2026-10-29: iOS collector is Swift (`PKMemoryCollector`) called from the ObjC++ module via `PerformanceKit-Swift.h`; builds in the Expo example without extra Podfile changes.
 - 2026-10-29: Added a thin `getSnapshot()` export to `src/index.tsx` (pass-through) so the example can exercise native; validation/normalization remains Phase 6.
 - 2026-10-29: Lifecycle semantics: start with same interval = no-op, different interval = replace the single ticker, invalid interval rejects `E_INVALID_INTERVAL` and leaves a running session alone, stop when stopped = no-op. While monitoring `getSnapshot` returns the latest sample; failed sample clears it. Added thin TS `startMonitoring`/`stopMonitoring` pass-throughs (default 1000 ms).
+- 2026-10-29: TS layer split into `api.ts` (validation, normalization), `errors.ts` (`PerformanceKitError`, codes `E_INVALID_INTERVAL|E_MEMORY_UNAVAILABLE|E_UNKNOWN`), `usePerformanceMonitor.ts`. Hook ref-counts enabled hooks so the shared session stops only when the last unmounts; it polls `getSnapshot` per interval. Added dev deps `react-test-renderer@19.3.0` + types for hook tests (deprecated in React 19 but working).

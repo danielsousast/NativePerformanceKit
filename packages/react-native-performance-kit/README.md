@@ -12,13 +12,50 @@ npm install react-native-performance-kit
 
 ## Usage
 
+```ts
+import {
+  startMonitoring,
+  stopMonitoring,
+  isMonitoring,
+  getSnapshot,
+  PerformanceKitError,
+} from 'react-native-performance-kit';
 
-```js
-import { isMonitoring } from 'react-native-performance-kit';
-
-// The public API is under construction (see specs/plan.md).
-const monitoring = isMonitoring(); // false
+try {
+  await startMonitoring({ intervalMs: 500 }); // default 1000, minimum 100
+  const { timestamp, memoryUsageBytes, fps } = await getSnapshot();
+  // fps is null when it cannot be measured (for example when not monitoring)
+} catch (e) {
+  if (e instanceof PerformanceKitError) {
+    console.warn(e.code, e.message); // E_INVALID_INTERVAL | E_MEMORY_UNAVAILABLE | E_UNKNOWN
+  }
+} finally {
+  await stopMonitoring(); // safe when not monitoring
+}
 ```
+
+### React hook
+
+```tsx
+import { usePerformanceMonitor } from 'react-native-performance-kit';
+
+function Overlay({ enabled }: { enabled: boolean }) {
+  const { snapshot, error } = usePerformanceMonitor({ intervalMs: 1000, enabled });
+  // snapshot: PerformanceSnapshot | null, error: PerformanceKitError | null
+}
+```
+
+The hook starts monitoring while mounted and enabled, polls the latest snapshot once per
+interval, and stops monitoring when the last enabled hook unmounts. The native session is shared:
+with several hooks (or manual calls) the most recent interval wins. When `enabled` turns false the
+last snapshot is kept.
+
+### Metrics
+
+- `memoryUsageBytes`: total PSS on Android, `phys_footprint` on iOS. Not interchangeable with each
+  other, RSS or heap.
+- `fps`: observed display cadence over a 1 s window, or `null`. An idle app reads about the refresh
+  rate; it does not prove React Native rendered every frame.
 
 
 ## Contributing
